@@ -145,17 +145,26 @@ class Mine(Scene):
         self.add(vg);
         self.play(x.animate.set_value(PI * 2.5), run_time = 6, rate_func = linear)
 
-class Diff(Scene):
+class Diff(ZoomedScene):
+
+    def __init__(self,**kwargs):
+        ZoomedScene.__init__(
+            self,
+            zoom_factor=.15
+        )
+
     def construct(self):
         axes = Axes([-10, 10, 1], [-10, 10, 1],x_length=12, y_length=10, tips=False, axis_config={
-            'tick_size' : .05
+            'tick_size' : .05,
+            # "numbers_to_include" : np.arange(-10, 10, 1)
         })
 
         def func(x : float):
             return .1 * (.7 * x**3 - 3 * x**2  + 30)
 
         self.play(Create(axes))
-        cube_graph = axes.get_graph(func, x_range=(-10,10,.01), color=BLUE)
+        # self.play(FadeOut(axes.x_axis.numbers),run_time = 2 )
+        cube_graph = axes.get_graph(func, x_range=(-10,10,.01), color=ORANGE)
         label_x = -1
         label = axes.get_graph_label(cube_graph,'f(x)', x_val=label_x,direction=UP)
         self.play(Create(cube_graph))
@@ -167,13 +176,13 @@ class Diff(Scene):
         
         x_end = ValueTracker(x_changing)
         
-        f_dot = Dot(axes.i2gp(x_fixed,cube_graph), color=ORANGE)
-        moving_dot = Dot(axes.i2gp(x_end.get_value(),cube_graph), color=ORANGE)
+        f_dot = Dot(axes.i2gp(x_fixed,cube_graph), color=BLUE, radius=.01)
+        moving_dot = Dot(axes.i2gp(x_end.get_value(),cube_graph), color=BLUE, radius=.01)
 
         self.play(Create(f_dot))
         self.play(Create(moving_dot))
 
-        line = Line(f_dot, moving_dot, color=ORANGE).scale(100)
+        line = Line(f_dot, moving_dot, color=BLUE)
 
         vBottomPoint = moving_dot.get_center().copy()
         vBottomPoint[1] = f_dot.get_center()[1]
@@ -182,26 +191,33 @@ class Diff(Scene):
         hLine = Line(f_dot.get_center(),vBottomPoint)
 
         self.play(Create(line))
+        self.play(line.animate.scale(100))
         self.play(Create(vLine))
         self.play(Create(hLine))
         
 
         brRight = Brace(vLine, RIGHT)
         self.play(Create(brRight));
-        brRightText =  brRight.get_text('dy')
+        brRightText =  brRight.get_tex(r"dy")
         self.play(Create(brRightText));
 
 
 
         brBottom = Brace(hLine, DOWN)
         self.play(Create(brBottom))
-        brBottomText = brBottom.get_text('dx')
+        brBottomText = brBottom.get_tex(r"dx")
         self.play(Create(brBottomText))
+
+        self.zoomed_camera.frame.move_to(f_dot)
+        # self.zoomed_camera.frame.scale(20)
+        
+
+        self.activate_zooming(animate=True)
 
 
         def dot_updater(dot:Dot):
             nonlocal x_end
-            nDot = Dot(axes.i2gp(x_end.get_value(),cube_graph), color=ORANGE)
+            nDot = Dot(axes.i2gp(x_end.get_value(),cube_graph), color=BLUE , radius=.01)
             dot.become(nDot)
 
             vBottomPoint = nDot.get_center().copy()
@@ -217,15 +233,16 @@ class Diff(Scene):
             brRight.become(brLeftNew)
             brBottom.become(brBottomNew)
 
-            brRightText.become(brRight.get_text('dy'))
-            brBottomText.become(brBottom.get_text('dx'))
+            brRightText.become(brRight.get_tex( r"dy"))
+            brBottomText.become(brBottom.get_tex(r"dx"))
 
-            line.become(Line(f_dot.get_center(),nDot.get_center(),color = ORANGE).scale(100))
+            line.become(Line(f_dot.get_center(),nDot.get_center(),color = BLUE).scale(100))
             
 
         moving_dot.add_updater(dot_updater)
 
-        self.play(x_end.animate.set_value(x_fixed + .5), run_time = 4)
+        self.play(x_end.animate.set_value(x_fixed + .3), run_time = 4)
+
 
 
         
