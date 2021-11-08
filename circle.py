@@ -53,10 +53,15 @@ class CircleArea(Scene):
             fPoint = slices[0][0].get_end()
             ePoint = slices[len(slices) - 1][0].get_arc_center()
 
+
+            angleDelta = (2 * PI) / len(slices)
+            angleSum = 0
+            colorArcs = VGroup()
             for i,item in enumerate(slices):
                 if (i % 2 == 1):
                     continue
-
+                arc = Arc(self.circle.radius, i * angleDelta, angleDelta, arc_center=self.circle.get_center(),color = ORANGE)
+                colorArcs.add(arc)
                 arc : Arc = item[0].copy()
                 arc.set_fill(None, 0)
                 arc.set_stroke(width=2 * sliceStrokeWidth)
@@ -65,13 +70,13 @@ class CircleArea(Scene):
                 # self.play(Create(arc))
             nArcs.reverse()
             arcGroups = VGroup()
-            for i in nArcs:
+            for i, item in enumerate(nArcs):
                 if animateEach:
-                    self.play(Create(i), run_time = 1 / len(slices))
-                arcGroups.add(i)
+                    self.play(Create(item),Create(colorArcs[i]) , run_time = 2 / len(slices))
+                arcGroups.add(item)
             if animateEach == False:
                 line = Line(fPoint, ePoint, stroke_width = 2 * sliceStrokeWidth, color = ORANGE)
-                self.play(Create(line))
+                self.play(Create(line), Create(colorArcs))
                 arcGroups.add(line)
                 # self.play(FadeIn(arcGroups))
 
@@ -83,15 +88,17 @@ class CircleArea(Scene):
 
             nArcs.reverse()
 
+
+            radiusLine = Line(self.circle.point_at_angle(0), self.circle.get_center(), color = ORANGE)
             fLine = slices[0][2].copy()
             fLine.set_stroke(ORANGE, width = 2 * sliceStrokeWidth)
-            self.play(Create(fLine))
+            self.play(Create(fLine), Create(radiusLine))
 
             leftBrace = Brace(fLine,  direction=fLine.copy().rotate(PI / 2).get_unit_vector())
             leftBraceText = leftBrace.get_tex(r"r")
             self.play(FadeIn(leftBrace), FadeIn(leftBraceText))
             
-            highlightSlicesGroup.add(arcGroups,fLine, leftBrace, leftBraceText, topBrace, topBraceText)
+            highlightSlicesGroup.add(arcGroups,fLine, leftBrace, leftBraceText, topBrace, topBraceText, colorArcs, radiusLine)
 
             return highlightSlicesGroup
 
@@ -145,16 +152,20 @@ class CircleArea(Scene):
 
         def increaseSlice(n, incr,pSlices, animateNewSlice = True, thinSlices = False):
             nonlocal pLines
-            noOfSlices = n + n
+            noOfSlices = n + incr
             # if(pLines != None):
             #     self.remove(pLines)
             nLines = divideCircle(noOfSlices, thinSlices)
             # pLines = nLines
-            if(pLines != None):
-                self.play(pLines.animate.become(nLines))
-            else:
-                self.play(GrowFromCenter(nLines))
-                pLines = nLines
+            self.play(GrowFromCenter(nLines))
+            if pLines:
+                self.remove(pLines)
+            pLines = nLines
+            # if(pLines != None):
+            #     self.play(pLines.animate.become(nLines))
+            # else:
+            #     self.play(GrowFromCenter(nLines))
+                # pLines = nLines
             nSlices = createSlices(noOfSlices, thinSlices)
             nSlices = transition(pSlices, nSlices, animateNewSlice)
             # gr = highlightSlices(nSlices)
@@ -177,18 +188,20 @@ class CircleArea(Scene):
         circleAndSectionGroup = VGroup(self.circle)
         sliceStrokeWidth = 2
         arcStrokeWidth = 2
-        color1 = color_gradient([BLUE, GREEN], 1)
-        color2 = color_gradient([ORANGE, PURPLE], 1)
+        colors = color_gradient([ORANGE, PURPLE] , 2)
         for i in range(slices):
             arc, sLine, fLine, triangle = getArc(
                 self.circle.get_center(),startAngle,angleDelta,''
             )
-            if i % 2:
-                arc.set_color_by_gradient(BLUE, GREEN, GOLD)
-                triangle.set_color_by_gradient(BLUE, GREEN, GOLD)
-            else:
-                arc.set_color_by_gradient(ORANGE, PURPLE)
-                triangle.set_color_by_gradient(ORANGE, PURPLE)
+            # arc.set_fill(colors[i % 2], 1)
+            # triangle.set_fill(colors[i % 2], 1)
+            
+            # if i % 2:
+            #     arc.set_color_by_gradient(BLUE, GREEN, GOLD)
+            #     triangle.set_color_by_gradient(BLUE, GREEN, GOLD)
+            # else:
+            #     arc.set_color_by_gradient(ORANGE, PURPLE)
+            #     triangle.set_color_by_gradient(ORANGE, PURPLE)
 
             group = VGroup(arc, sLine, fLine, triangle)
             arcLineGroup.append(group)
@@ -203,7 +216,10 @@ class CircleArea(Scene):
 
             circleAndSectionGroup.add(group)
 
-        self.play(GrowFromCenter(lines))
+        # self.play(GrowFromCenter(lines))
+        cuts = divideCircle(slices)
+        circleAndSectionGroup.add(cuts)
+        self.play(GrowFromCenter(cuts))
         self.add(arcs)
         self.add(triangles)
         self.circle.set_fill(BLUE, 0)
@@ -220,32 +236,32 @@ class CircleArea(Scene):
         gr = highlightSlices(newArcLineGroup)
         self.play(FadeOut(gr))
 
-        pLines = None
+        pLines = cuts
 
         pSlices = arcLineGroup
 
-        for i in range(1):
-            incr = 10
+        for i in range(2):
+            incr = slices
             pSlices, lines = increaseSlice(slices,incr,pSlices, True)
             slices += incr
 
-        # pSlices, lines = increaseSlice(slices, 100, pSlices, False, False)
+        pSlices, lines = increaseSlice(slices, 100, pSlices, False, False)
 
-        # gr = highlightSlices(pSlices, False)
+        gr = highlightSlices(pSlices, False)
 
-        # areaText = self.areaTextSlice()
+        areaText = self.areaTextSlice()
 
-        # self.play(FadeOut(areaText))
-        # self.play(FadeOut(gr))
+        self.play(FadeOut(areaText))
+        self.play(FadeOut(gr))
 
-        # sliceGroup = VGroup()
-        # for i in (pSlices):
-        #     sliceGroup.add(i)
+        sliceGroup = VGroup()
+        for i in (pSlices):
+            sliceGroup.add(i)
         
-        # self.play(FadeOut(sliceGroup))
+        self.play(FadeOut(sliceGroup))
         
         # self.play(FadeOut(lines))
-        # self.play(self.circle.animate.move_to(ORIGIN))
+        # self.play(self.circleanimate.move_to(ORIGIN))
         # self.play(FadeOut())
         # self.f
 
@@ -338,12 +354,34 @@ class CircleArea(Scene):
 
     def construct(self):
 
-        # self.intro()
+        self.intro()
+        self.slicesAnimation()
+
+        # rectangles, cutGr = self.ringAnimation(5)
+        
+        # self.play(
+        #     self.circle.animate.move_to(3 * LEFT + 3 * UP),
+        #     rectangles.animate.move_to( 3 * RIGHT + 3 * UP),
+        #     cutGr.animate.move_to( 3 * LEFT + 3 * UP)
+        
+        # )
+        # self.circle = Circle(1, WHITE)
+        # self.circle.set_fill(self.ringColor, self.ringOpacity)
+        # self.play(FadeIn(self.circle))
+        # # self.ringAnimation(10)
+        # rectangles, cutGr = self.ringAnimation(10)
+        
+        # self.play(
+        #     self.circle.animate.move_to(3 * LEFT + 3 * DOWN),
+        #     rectangles.animate.move_to( 3 * RIGHT + 3 * DOWN),
+        #     cutGr.animate.move_to( 3 * LEFT + 3 * DOWN)
+        
+        # )
+        # self.play()
         # self.slicesAnimation()
         
-        self.circle = Circle(1).set_color_by_gradient(GREEN, BLUE)
-        self.play(FadeIn(self.circle))
-        self.wait(1)
+        # self.circle = Circle(1, color = WHITE).set_color_by_gradient(GREEN,)
+        # self.play(Create(self.circle))
         # self.ringAnimation()
         # circleRadius = 1
         # circleBuff = .1
@@ -371,18 +409,10 @@ class CircleArea(Scene):
         # self.ringAnimation()
 
 
-    def ringAnimation(self):
+    def ringAnimation(self, count):
 
-
-        def createRing(center, innerRadius, gap):
-            ring = Circle(radius=innerRadius + gap, stroke_width = 0)
-            ring.move_to(center)
-            ring.set_fill(self.ringColor, self.ringOpacity)
-            innerRing = Circle(innerRadius, stroke_width = 0)
-            innerRing.move_to(center)
-            innerRing.set_fill(BLACK, 1)
-            return VGroup(ring, innerRing)
-       
+        strokeColor = BLACK
+        strokeWidth = 0
 
         def cutCircle(n):
             gap = self.circle.radius / n
@@ -394,9 +424,20 @@ class CircleArea(Scene):
                 sCircle.set_stroke(WHITE)
                 circlesGroup.add(sCircle)
             return circlesGroup
+ 
+        def bottomLeftBrace(prevRectangles):
+            brace = Brace(prevRectangles, DOWN)
+            txt = brace.get_tex(r"2{\pi}r")
+            brace2 = Brace(prevRectangles, LEFT)
+            txt2 = brace2.get_tex(r"r")
+            labelGroup = VGroup(brace, txt, brace2, txt2)
+            self.play(FadeIn(labelGroup))
+            self.wait(1)
+            self.play(FadeOut(labelGroup))
 
-    
-        def createRect(ring : VGroup, extended, returnCorner):
+
+
+        def createRect(ring : VGroup, extended, returnCorner, color):
             gap = ring[0].radius - ring[1].radius
             rectLeftBottom = ring[0].point_at_angle(1.5 * PI);
             rectLeftTop = rectLeftBottom.copy()
@@ -414,251 +455,251 @@ class CircleArea(Scene):
             
             rectangle = Polygon(rectLeftBottom, rectLeftTop, rectRightTop, rectRightBottom)
             rectangle.set_stroke(width=0)
-            rectangle.set_fill(self.ringColor, self.ringOpacity)
+            rectangle.set_fill(color = color, opacity= 1)
 
             if returnCorner:
                 return rectangle, rectLeftTop, rectLeftBottom, rectRightTop, rectRightBottom
             return rectangle
 
-        def unwrapRing(ring : VGroup):
-            gap = ring[0].radius - ring[1].radius
-            rectangle, rectLeftTop, rectLeftBottom, rectRightTop, rectRightBottom = createRect(ring, False, True)
-            self.add(rectangle)
+        def createRing(center, innerRadius, gap, color):
+            ring = Circle(radius=innerRadius + gap)
+            ring.set_stroke(strokeColor, strokeWidth)
+            ring.move_to(center)
+            ring.set_fill(self.ringColor, self.ringOpacity)
+            ring.set_fill(color, opacity=1)
+            innerRing = Circle(innerRadius)
+            innerRing.move_to(center)
+            innerRing.set_fill(BLACK, 1)
+            innerRing.set_stroke(strokeColor, strokeWidth)
+            return VGroup(ring, innerRing)
+
+
+
+        center = 3 * LEFT
+        self.play(self.circle.animate.move_to(center))
+        # count = 5
+        colors = color_gradient([BLUE, GREEN], length_of_output=count)
+        gap = 1 / count
+        prRings = VGroup()
+        
+
+        for i in range(count):
+            ringRadius = 1 - (i + 1) * gap
+            prRings.add(createRing(center, ringRadius, gap, colors[i]))
+        
+        cutGr = cutCircle(count)
+
+        for i, item in enumerate(prRings):
+            self.play(FadeIn(item), run_time = 1 / count)
+            # self.add(cutGr[-i - 1])
+        
+
+        center = ORIGIN
+
+        self.add(cutGr)
+        self.play(prRings.animate.move_to(center))
+
+        x = ValueTracker(0)
+        
+        def setRing(radius, zIndex, gap, color, time , animateCircle = False):
             
-            if ring[1].radius == 0:
-                rect = createRect(ring,True, False)
-                self.play(ring.animate.become(rect))
-                return rect
+            ring = createRing(center, radius, gap, color)
+            if animateCircle:
+                self.play(FadeIn(ring), run_time = time)
+            else:
+                self.add(ring)
 
-            innerRadius = ring[1].radius
-
-
-            def createConveringArc(angle,side):
+            def createConveringArc(center, angle, side):
                 startAngle = 1.5 * PI
                 arc = None
                 if side == 'LEFT':
-                    arc = Arc(innerRadius + gap,startAngle,-angle, arc_center= ring[0].get_center())
+                    arc = Arc(
+                        radius + gap,startAngle,-angle, arc_center = center
+                        )
                 else:
-                    arc = Arc(innerRadius + gap,.5 * PI,-(angle - PI), arc_center= ring[0].get_center())
-                triangle = Polygon(ring[0].get_center(), arc.get_start(), arc.get_end(),stroke_width = 0)
+                    arc = Arc(
+                        radius + gap,.5 * PI,-(angle - PI), arc_center = center
+                        )
+                
+                triangle = Polygon(
+                    center, arc.get_start(), arc.get_end(),stroke_width = 0
+                    )
+
                 arc.set_fill(BLACK, 1)
                 triangle.set_fill(BLACK, 1)
-                arc.set_stroke(width=0)
-                triangle.set_stroke(width=0)
+                arc.set_stroke(strokeColor, width=strokeWidth)
+                triangle.set_stroke(strokeColor, strokeWidth)
                 arcGroup = VGroup(arc, triangle)
 
                 return arcGroup
-
-            initCenterX = ring[0].get_center()[0]
-            angle = 0
-
-            leftArcGroup = createConveringArc(0, 'LEFT')
-            rightArcGroup = createConveringArc(PI, 'RIGHT')
-
-            trAngle = 0
-            tr1 = ring[0].point_at_angle(trAngle)
-            tr2 = ring[1].point_at_angle(trAngle)
-            angle2 = (angle / (2 * PI)) * (PI * ring[1].radius)
-            angle2 = .05
-            tr3 = ring[1].point_at_angle(min(2 * PI, angle + angle2))
-            tr = Polygon(tr1, tr2, tr3)
-
-            gr = VGroup(ring,leftArcGroup, rightArcGroup, tr)
-
-            self.add(gr)
-
-
             
+            leftArcGroup = createConveringArc(center, 0, 'LEFT')
+            rightArcGroup = createConveringArc(center, PI, 'RIGHT')
+            self.add(leftArcGroup)
+            self.add(rightArcGroup)
 
-            x = ValueTracker(ring[0].get_arc_center()[0])
+            def getNewCenterRadius():
+                rotationAngle = x.get_value()
+                distance = rotationAngle * (radius + gap)
+                newCenter = center.copy()
+                newCenter[0] += distance
+                return rotationAngle, distance, newCenter
+
+            def ringUpdater(r):
+                _, _, newCenter = getNewCenterRadius()
+                nRing = createRing(newCenter, radius, gap, color)
+                r.become(nRing)
+
+            def leftUpdater(lft):
+                rotationAngle, distance, newCenter = getNewCenterRadius()
+                if rotationAngle > PI:
+                    rotationAngle = PI
+                newArc = createConveringArc(newCenter, rotationAngle, 'LEFT')
+                lft.become(newArc)
+
+            def rightUpdater(rt):
+                rotationAngle, distance, newCenter = getNewCenterRadius()
+                if rotationAngle < PI:
+                    return
+                newArc = createConveringArc(newCenter, rotationAngle, 'RIGHT')
+                rt.become(newArc)
+
+            ring.add_updater(ringUpdater)
+            leftArcGroup.add_updater(leftUpdater)
+            rightArcGroup.add_updater(rightUpdater)
+
+            triangle = Polygon(center, center, center)
+            self.add(triangle)
+
+            def triangleUpdater(tr):
+                rotationAngle, distance, newCenter = getNewCenterRadius()
+                if radius == 0 and rotationAngle < PI: 
+                    return
+                distort = (rotationAngle / (2 * PI)) * PI * gap
+                distortAngle = distort / radius
+                laggingAngle = rotationAngle + distortAngle
+                if rotationAngle < 1.5 * PI:
+                    rotationAngle = 1.5 * PI - rotationAngle
+                else:
+                    rotationAngle = 2*PI - rotationAngle + 1.5 * PI
+
+                rt = laggingAngle > 2 * PI
+                if laggingAngle < 1.5 * PI:
+                    laggingAngle = 1.5 * PI - laggingAngle
+                else:
+                    laggingAngle = 2*PI - laggingAngle + 1.5 * PI
+                
+                p1 = ring[0].point_at_angle(rotationAngle)
+                p2 = ring[1].point_at_angle(rotationAngle)
+                p3 = ring[1].point_at_angle(max(0, laggingAngle))
+                if rt:
+                    newCenter = center + (radius + gap) * DOWN
+                    newCenter[0] += 2 * PI * (radius + gap)
+                    newCenter[0] -= PI * gap
+                    newCenter[1] += gap
+                    p3 = newCenter
+                nTriangle = Polygon(p1, p2, p3)
+                # nTriangle.set_z_index(20)
+                nTriangle.set_fill(BLACK, opacity=1)
+                nTriangle.set_stroke(strokeColor, strokeWidth)
+                tr.become(nTriangle)
+                tr.set_z_index(20)
+                
+        
+            triangle.add_updater(triangleUpdater)
+
+            rectangle, rectLeftTop, rectLeftBottom, rectRightTop, rectRightBottom = createRect(ring, False, True, color)
+            self.add(rectangle)
             
 
             def rectUpdater(rect):
+                rotationAngle, distance, newCenter = getNewCenterRadius()
+                extra = (rotationAngle / (2 * PI)) * PI * gap
                 RLT = rectLeftTop.copy()
-                RLT[0] += ((x.get_value() - initCenterX) /( (2 * PI * ring[0].radius) - PI * gap)) * PI * gap
+                RLT[0] += extra
                 rectRightTop = rectLeftTop.copy()
                 rectRightBottom = rectLeftBottom.copy()
-                rectRightBottom[0] = rectRightTop[0] = x.get_value()
-                # rectRightBottom
+                rectRightBottom[0] = rectRightTop[0] = rectRightBottom[0] + distance
             
                 rectangle = Polygon(rectLeftBottom, RLT, rectRightTop, rectRightBottom)
                 rectangle.set_stroke(width=0)
-                rectangle.set_fill(self.ringColor, self.ringOpacity)
+                rectangle.set_fill(color, 1)
                 rect.become(rectangle)
                 rect.set_z_index(10)
-
-            def updater(r):
-                center = ring[0].get_arc_center()
-                
-                center[0] = x.get_value()
-
-                angle = max(0,(center[0] - initCenterX)) / ( (innerRadius + gap))
-
-                trAngle = angle
-                if angle > 1.5 * PI:
-                    trAngle = 2 * PI - angle + 1.5 * PI
-                    trAngle = min(trAngle, 2 * PI)
-                else:
-                    trAngle = 1.5 * PI - angle
-                tr1 = ring[0].point_at_angle(trAngle)
-                tr2 = ring[1].point_at_angle(trAngle)
-
-                extra = ((x.get_value() - initCenterX) /( (2 * PI * ring[0].radius))) * PI * gap
-                if ring[1].radius > 0:
-                    extra /= ring[1].radius
-                # else:
-                #     extra = 0
-
-                angle2 = (angle / (2 * PI)) * (PI * ring[1].radius)
-                angle2 = extra
-                tr3 = ring[1].point_at_angle(max(0, trAngle - angle2))
-                nTr = Polygon(tr1, tr2, tr3)
-                # nTr.set_stroke(width=0)
-                # nTr.set_fill(BLACK, opacity=1)
-                tr.become(nTr)
-                # self.add(nTr)
-
-                newArcGroup = None
-                if angle <= PI :
-                    newArcGroup = createConveringArc(angle, 'LEFT')
-                    leftArcGroup.become(newArcGroup)
-                else:
-                    lc = createConveringArc(PI, 'LEFT')
-                    leftArcGroup.become(lc)
-                    newArcGroup = createConveringArc(angle, 'RIGHT')
-                    rightArcGroup.become(newArcGroup)
-                
             
-                r.move_to(center)
-            
-                
-            gr.add_updater(updater)
             rectangle.add_updater(rectUpdater)
 
-            self.play(x.animate.set_value(ring[0].get_center()[0] + 2 * PI * (innerRadius + gap) ), run_time = 2)
-            rectangle.remove_updater(rectUpdater)
-
-            # rectRightTop = rectLeftTop.copy()
-            # rectRightBottom = rectLeftBottom.copy()
-            # rectLeftTop[0] += PI * gap
-            # rectRightTop[0] -= PI * gap
-            # rectRightTop[0] +=  + 2 * ring[0].radius * PI
-            # rectRightBottom[0] += 2 * ring[0].radius * PI
-            # p3 = rectRightTop.copy()
-            # p3[1] -= gap
-            # tr = Polygon(rectRightTop, rectRightBottom, p3)
-            # rect2 = Polygon(rectLeftBottom, rectLeftTop, rectRightTop, rectRightBottom)
-            # rect2.set_stroke(width=0)
-            # rect2.set_fill(self.ringColor, self.ringOpacity)
-            # tr.set_stroke(width=0)
-            # tr.set_fill(self.ringColor, self.ringOpacity)
-            # # self.play(gr.animate.become(tr), run_time = (gap) / (innerRadius + gap))
-            # self.remove(ring)
-            # self.play( FadeIn(tr), run_time = (gap) / (innerRadius + gap))
-            # self.play(FadeOut(ring), rectangle.animate.become(rect2), run_time = (gap) / (innerRadius + gap))
-            # rect2 = createRect(ring,True,False)
-            # self.remove(ring)
-            # self.play(FadeOut(ring), FadeIn(tr), run_time = (gap) / (innerRadius + gap))
-            # self.play(rectangle.animate.become(rect2), run_time = (gap) / (innerRadius + gap))
-            return rectangle
-
-
-        prevCutCircularGroup = None
-        prevRings = None
-        prevRectangles = None
-
-
-        def step(noOfRings, animate = True, showBrace = False):
-            
-            nonlocal prevRectangles, prevRings, prevCutCircularGroup
-
-            circleRadius = self.circle.radius
-            rings = VGroup()
-            gap = circleRadius / noOfRings
-            for i in range(noOfRings):
-                rings.add(createRing(self.circle.get_center(), circleRadius - (i + 1) * gap, gap))
-            
-            if animate:
-                self.circle.set_fill(opacity=0)
-                self.add(rings)
-            
-            cutCirclesGroup = cutCircle(noOfRings)
-            if animate:
-                self.play(Create(cutCirclesGroup))
+            return ring, leftArcGroup, rightArcGroup, rectangle, triangle, ringUpdater, leftUpdater, rightUpdater, rectUpdater, triangleUpdater
             
 
-            if(animate):
-                self.play(
-                    self.circle.animate.move_to( 3 * LEFT), 
-                    rings.animate.move_to(3 * LEFT),
-                    cutCirclesGroup.animate.move_to(3 * LEFT)    
-                )
-
-            rectangles = VGroup()
-
-            for i, item in enumerate(rings):
-                if animate:
-                    self.remove(cutCirclesGroup[noOfRings - i - 1])    
-                    self.play(item.animate.move_to(ORIGIN))
-                    rectangles.add(unwrapRing(item))
-                else:
-                    item.move_to(ORIGIN)
-                    rectangles.add(createRect(item,True, False))
-                # break
         
-            if prevCutCircularGroup != None:
-                gr1 = VGroup()
-                gr2 = VGroup()
-                self.play(prevCutCircularGroup.animate.become(cutCirclesGroup))
-                nB = VGroup()
-                for i in range(noOfRings):
-                    if i < len(prevRectangles):
-                        gr1.add(rectangles[i])
-                        # self.play(prevRectangles[i].animate.become(rectangles[i]))
-                        nB.add(prevRectangles[i])
-                    else:
-                        gr2.add(rectangles[i])
-                        # self.play(Create(rectangles[i]))
-                        nB.add(rectangles[i])
-
-                self.play(prevRectangles.animate.become(gr1))
-                self.play(FadeIn(gr2))
-                rectangles = nB
-
-            else:
-                prevCutCircularGroup = cutCirclesGroup
-
-            prevRectangles = rectangles
-            
-            if showBrace:
-                bottomLeftBrace(prevRectangles)
-            return rings
-
-
-        def bottomLeftBrace(prevRectangles):
-            brace = Brace(prevRectangles, DOWN)
-            txt = brace.get_tex(r"2{\pi}r")
-            brace2 = Brace(prevRectangles, LEFT)
-            txt2 = brace2.get_tex(r"r")
-            labelGroup = VGroup(brace, txt, brace2, txt2)
-            self.play(FadeIn(labelGroup))
-            self.wait(1)
-            self.play(FadeOut(labelGroup))
-
-
-        startSlice = 5
-        incr = 4
-        for i in range(1):
-            step(startSlice, i == 0, i == 0)
-            startSlice += incr
+        ringGr = VGroup()
+        arcGr = VGroup()
+        ringUpdaters = []
+        arcUpdaters = []
+        rectangles = VGroup()
+        triangles = VGroup()
+        rectangleUpdaters = []
+        triangleUpdaters = []
+        tmpRings = []
         
-        # step(5)
-        # step(9, False)
-        # step(7, False)
-        # step(9, False)
-        # step(11, False)
-        # # step(13, False)
-        # rings = step(100, False)
+        for i in range(count):
+            ringRadius = 1 - (i + 1) * gap
+            ring, leftArcGroup, rightArcGroup, rectangle, triangle,\
+            ringUpdater, leftUpdater, rightUpdater,\
+            rectUpdater, triangleUpdater = setRing(ringRadius, i + 1, gap, colors[i] , 1 / count)
+            tmpRings.append(createRing(center,ringRadius, gap, colors[i]))
+            self.remove(prRings[i])
+            ringGr.add(ring)
+            ringUpdaters.append(ringUpdater)
+            arcUpdaters.append(leftUpdater)
+            arcUpdaters.append(ringUpdater)
+            arcGr.add(leftArcGroup, rightArcGroup)
+            rectangles.add(rectangle)
+            triangles.add(triangle)
+            rectangleUpdaters.append(rectUpdater)
+            triangleUpdaters.append(triangleUpdater)
+            # ringGr.add(r)
+
+
+
+
+        self.play(x.animate.set_value(2 * PI), run_time = 2)
+
+        newRects = []
+
+        for index, item in enumerate(rectangles):
+            rectangle, rectLeftTop, rectLeftBottom, rectRightTop, rectRightBottom \
+                = createRect(tmpRings[index], True, True, colors[index])
+
+            item.remove_updater(rectangleUpdaters[index])
+            item.become(rectangle)
+
+            r0 = tmpRings[0][0].radius
+            r = tmpRings[index][0].radius
+            delta = PI * (r0 - r)
+            rectLeftBottom[0] += delta
+            rectLeftTop[0] += delta
+            rectRightBottom[0] += delta
+            rectRightTop[0] += delta
+            
+            rectangle = Polygon(rectLeftBottom, rectLeftTop, rectRightTop, rectRightBottom)
+            rectangle.set_stroke(width=0)
+            rectangle.set_fill(color = colors[index], opacity= 1)
+
+            self.remove(triangles[index])
+            newRects.append(rectangle)
+            # self.play(item.animate.become(rectangle))
+        
+        self.play( *[item.animate.become(newRects[i]) for i, item in enumerate(rectangles)])
+        
+        self.wait(1)
+
+        return rectangles, cutGr
+        
+
+
+
 
         # rectangle, rectLeftTop, rectLeftBottom, rectRightTop, rectRightBottom = createRect(rings[0], True, True)
         # rectangle2, rectLeftTop2, rectLeftBottom2, rectRightTop2, rectRightBottom2 = createRect(rings[-1], True, True)
