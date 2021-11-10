@@ -56,7 +56,7 @@ class CircleArea(Scene):
         leftBraceText = leftBrace.get_tex(r"r")
         self.play(FadeIn(leftBrace), FadeIn(leftBraceText))
         
-        highlightSlicesGroup.add(arcGroups,fLine, leftBrace, leftBraceText, topBrace, topBraceText, colorArcs, radiusLine)
+        highlightSlicesGroup.add(leftBraceText, topBraceText,arcGroups,fLine, leftBrace, topBrace, colorArcs, radiusLine)
 
         return highlightSlicesGroup
 
@@ -224,14 +224,48 @@ class CircleArea(Scene):
         return VGroup(text, oText)
         
 
+    def areaTextSlice3(self, textPos, scale, first, second, triangle = False):
+        
+        text = MathTex(r"Area").scale(scale)
+        text.move_to(textPos)
+        # self.play(FadeIn(text))
+        
+        txt = r" = Width * Height"
+        if triangle:
+            txt = r" = {\frac{1}{2}} * Base * Height"
+        nText = MathTex(txt).scale(scale).next_to(text, RIGHT)
+        self.play(Write(text), Write(nText))
+        txt = r" = "
+        if triangle:
+            txt = r" = {\frac{1}{2}} * "
+        nText2 = MathTex(txt).scale(scale).next_to(nText, DOWN).align_to(nText, LEFT)
+
+        txt = r"{\pi}r"
+        if triangle:
+            txt = r"2{\pi}r"
+        w = MathTex(txt).scale(scale).next_to(nText2,RIGHT)
+        mul = MathTex(r" * ").scale(scale).next_to(w)
+        h = MathTex(r"r").scale(scale).next_to(mul, RIGHT)
+        self.play(Write(nText2))
+        self.play(first.animate.become(w))
+        self.play(Write(mul))
+        self.play(second.animate.become(h))
+        last = MathTex(r" = {\pi}r^2").scale(scale).next_to(nText2, DOWN).align_to(nText2, LEFT)
+        self.play(Write(last))
+
+        return VGroup(text, nText, nText2, mul, first, second, last)
+
+        
+
 
     def intro(self):
+        center = 1 * DOWN
         circleRadius = 1
         circleBuff = .1
-        self.circle = Circle(circleRadius, color = WHITE)
+        self.circle = Circle(circleRadius, color = WHITE).move_to(center)
         self.play(Create(self.circle))
 
-        radiusLine = Line(self.circle.get_center(),RIGHT)
+        radiusLine = Line(self.circle.get_center(),self.circle.point_at_angle(0))
         self.play(Create(radiusLine))
         
         brace = Brace(radiusLine,DOWN, buff=circleBuff)
@@ -249,13 +283,13 @@ class CircleArea(Scene):
         circleBottomPoint = self.circle.point_at_angle(1.5 * PI)
         lineStartPoint = circleBottomPoint.copy()
         lineStartPoint[0]-= PI * self.circle.radius
-        lineStartPoint[1]-= .1
+        lineStartPoint[1]-= .4
         lineEndPoint = circleBottomPoint.copy()
         lineEndPoint[0] += PI * self.circle.radius
-        lineEndPoint[1]-= .1
+        lineEndPoint[1]-= .4
 
 
-        c2 = Circle(circleRadius, color = ORANGE)
+        c2 = Circle(circleRadius, color = ORANGE).move_to(center)
 
         self.play(Create(c2))
 
@@ -270,7 +304,7 @@ class CircleArea(Scene):
 
         self.play(FadeOut(brace), FadeOut(braceText))
         self.play(FadeOut(c2))
-
+        
 
         
 
@@ -297,7 +331,7 @@ class CircleArea(Scene):
 
         circles = []
 
-        deltaY = 3 * UP
+        deltaY = 2.75 * UP
 
         self.play(
             self.circle.animate.shift( deltaY),
@@ -316,7 +350,7 @@ class CircleArea(Scene):
         allElelms.add(slicesGroup, cuts, self.circle)
 
 
-        deltaY = 3 * DOWN
+        deltaY = 2.75 * DOWN
 
         self.play(
             self.circle.animate.shift( deltaY),
@@ -337,9 +371,9 @@ class CircleArea(Scene):
 
         allElelms.add(slicesGroup, cuts, self.circle, highlightGroup)
 
-        self.play(allElelms.animate.shift(3 * LEFT).scale(.6))
+        self.play(allElelms.animate.shift(3 * LEFT).scale(.8))
 
-        areaText = self.areaTextSlice2(2 * RIGHT, .6)
+        areaText = self.areaTextSlice3(2 * RIGHT, .7, highlightGroup[1].copy(),  highlightGroup[0].copy())
 
         self.play(FadeOut(areaText))
 
@@ -347,14 +381,14 @@ class CircleArea(Scene):
         self.play(FadeOut(allElelms))
 
 
-    def rectLabels(self, rectangles):
-        brace = Brace(rectangles, DOWN)
+    def rectLabels(self, rectangles, line):
+        brace = Brace(line, DOWN)
         txt = brace.get_tex(r"2{\pi}r")
         braceL = Brace(rectangles, LEFT)
         txtL = braceL.get_tex(r"r")
         self.play(FadeIn(brace, txt))
         self.play(FadeIn(braceL, txtL))
-        return VGroup(brace, txt, braceL, txtL)
+        return VGroup(txt, txtL, brace, braceL)
     
 
     def ringAnimationAll(self):
@@ -364,50 +398,77 @@ class CircleArea(Scene):
         # self.circle.set_fill(self.ringColor, self.ringOpacity)
         self.play(FadeIn(self.circle))
 
-        rings = 5
-        rectangles, cutGr = self.ringAnimation(rings)
+        rings = 4
+        rectangles, cutGr = self.ringAnimation(rings, None)
         # rectangles.set_z_index(30)
         # cutGr.set_z_index(30)
         # self.circle.set_z_index(30)
-        deltaY = 3 * UP
+        deltaY = 2.75 * UP
         self.play(
-            self.circle.animate.shift(deltaY),
+            # self.circle.animate.shift(deltaY),
             rectangles.animate.shift(deltaY),
-            cutGr.animate.shift(deltaY)
+            # cutGr.animate.shift(deltaY)
         
         )
+        # self.remove(cutGr)
         rings += rings
-        allRingGroups.add(self.circle, rectangles, cutGr)
+        allRingGroups.add(self.circle, rectangles)
 
 
-        self.circle = Circle(1, WHITE)
-        # self.circle.set_fill(self.ringColor, self.ringOpacity)
-        self.play(FadeIn(self.circle))
+        # self.circle = Circle(1, WHITE)
+        # # self.circle.set_fill(self.ringColor, self.ringOpacity)
+        # self.play(FadeIn(self.circle))
 
-        rectangles, cutGr = self.ringAnimation(rings)
-        deltaY = 3 * DOWN
+        rectangles, cutGr = self.ringAnimation(rings, cutGr)
+        deltaY = 2.75 * DOWN
         self.play(
-            self.circle.animate.shift(deltaY),
+            # self.circle.animate.shift(deltaY),
             rectangles.animate.shift(deltaY),
-            cutGr.animate.shift(deltaY)
+            # cutGr.animate.shift(deltaY)
         
         )
-        rings += rings
+        rings += floor(.5 * rings)
+        allRingGroups.add(self.circle, rectangles)
+
+
+        # self.circle = Circle(1, WHITE)
+        # # self.circle.set_fill(self.ringColor, self.ringOpacity)
+        # self.play(FadeIn(self.circle))
+
+        rectangles, cutGr = self.ringAnimation(rings, cutGr)
         allRingGroups.add(self.circle, rectangles, cutGr)
 
+        circle2 = Circle(1, ORANGE)
+        circle2.move_to(self.circle)
+        self.play(Create(circle2))
+        
+        
+        circleBottomPoint = self.circle.point_at_angle(1.5 * PI)
+        lineStartPoint = circleBottomPoint.copy()
+        lineStartPoint[0]-= PI * self.circle.radius
+        lineStartPoint[1]-= .4
+        lineEndPoint = circleBottomPoint.copy()
+        lineEndPoint[0] += PI * self.circle.radius
+        lineEndPoint[1]-= .4
+        
+        line = Line(lineStartPoint, lineEndPoint, color = circle2.color)
+        
+        self.play(circle2.animate.become(line))
 
-        self.circle = Circle(1, WHITE)
-        # self.circle.set_fill(self.ringColor, self.ringOpacity)
-        self.play(FadeIn(self.circle))
+        v = rectangles[0].get_vertices()
+        line2 = Line(v[0], v[3], color = line.color)
+        
 
-        rectangles, cutGr = self.ringAnimation(rings)
-        allRingGroups.add(self.circle, rectangles, cutGr)
-        labels = self.rectLabels(rectangles)
+        self.play(circle2.animate.become(line2))
+
+        allRingGroups.add(circle2)
+        
+        labels = self.rectLabels(rectangles, circle2)
         allRingGroups.add(labels)
 
-        self.play(allRingGroups.animate.shift(3 * LEFT).scale(.6))
+        self.play(allRingGroups.animate.shift(3 * LEFT).scale(.75))
 
-        areaText = self.areaTextSlice2(2 * RIGHT, .8, True)
+        areaText = self.areaTextSlice3(2.3 * RIGHT, .7, labels[0].copy(), labels[1].copy(), True)
 
         self.play(FadeOut(areaText))
 
@@ -419,19 +480,26 @@ class CircleArea(Scene):
     def circleToRect(self):
         grad = [GREEN, BLUE]
         opacity = .6
-        self.circle = Circle(color = WHITE).set_fill(grad, opacity)
+        self.circle = Circle(color = WHITE).set_fill(grad, opacity).shift(2 * UP)
         # circle2 = self.circle.copy().move_to(3 * RIGHT)
         self.play(FadeIn(self.circle))
-        rectangle = Rectangle(WHITE, height=self.circle.radius, width=self.circle.radius * PI).set_fill(grad, opacity)
-        self.play(self.circle.animate.become(rectangle))
-        self.play(FadeOut(self.circle))
+        circle = self.circle.copy()
+        rectangle = Rectangle(WHITE, height=self.circle.radius, width=self.circle.radius * PI)\
+        .shift(3 * LEFT + .5 * DOWN).set_fill(grad, opacity)
+        self.play(circle.animate.become(rectangle))
+        # self.play(FadeOut(self.circle))
+        return circle
 
     def circleToTriangle(self):
-        grad = [GREEN, BLUE]
-        opacity = .6
-        self.circle = Circle(color = WHITE).set_fill(grad, opacity)
-        self.play(FadeIn(self.circle))
-        self.ringAnimation2nd(5)
+        # grad = [GREEN, BLUE]
+        # opacity = .6
+        # self.circle = Circle(color = WHITE).set_fill(grad, opacity)
+        # self.play(FadeIn(self.circle))
+        c2 = self.circle.copy()
+        self.add(c2)
+        c2.set_z_index(40)
+        self.play(self.circle.animate.move_to(ORIGIN + 3 * RIGHT))
+        return self.ringAnimation2nd(5)
 
 
     def introText(self):
@@ -471,7 +539,10 @@ class CircleArea(Scene):
         self.play(Write(rectArea[1]), Write(trArea[1]), run_time = 1.5)
 
         self.wait(1)
-        self.play(FadeOut(rectArea, trArea))
+        gr = VGroup(rectArea, trArea)
+        self.play(gr.animate.shift(2.5 * UP).scale(1))
+        return gr
+        # self.play(FadeOut(rectArea, trArea))
     
     def circleArea(self):
         circle = Circle(1, WHITE)
@@ -487,26 +558,18 @@ class CircleArea(Scene):
         # areaText = Text("ক্ষেত্রফল = ", font = self.font ).scale(.6)
         self.play(FadeIn(brace), FadeIn(braceTxt))
 
-        areaText = MathTex(r"Area").next_to(circle, DOWN, buff=.2).shift(.75 * LEFT)
+        areaText = MathTex(r"Area").next_to(circle, DOWN, buff=.2).shift(.75 * LEFT + .5 * DOWN)
         self.play(circle2.animate.become(areaText))
-        eqText = MathTex(r" = ").next_to(circle2, RIGHT)
-        self.play(Write(eqText))
-        piText = MathTex(r"{\pi}").next_to(eqText, RIGHT)
+        # eqText = MathTex(r" = ").next_to(circle2, RIGHT)
+        # self.play(Write(eqText))
+        piText = MathTex(r" = {\pi}").next_to(areaText, RIGHT)
         self.play(Write(piText))
         braceTxt2 = braceTxt.copy()
         self.play(braceTxt2.animate.become(MathTex(r"r").next_to(piText, .5 *RIGHT)))
         self.play(braceTxt2.animate.become(MathTex(r"r^2").next_to(piText, .5 * RIGHT)).shift(.1 * UP))
-        # self.play(braceTxt)
-
-        # areaText2 = MathTex(r"Area = {\pi}r^2")
-        # txtGroup = VGroup(areaText2)
-        # txtGroup.next_to(circle, DOWN)
-        # self.play(Write(areaText2))
-        # gr = VGroup(circle, line, brace, braceTxt,txtGroup)
-        # # self.play(Create(gr), run_time = 2)
-        # self.wait(1)
-        # txt = Text("")
-        # self.play(FadeOut(gr))
+        
+        gr = VGroup(circle, circle2, areaText, piText, braceTxt2, brace, line, braceTxt)
+        self.play(FadeOut(gr))
 
 
     def endText(self):
@@ -519,11 +582,22 @@ class CircleArea(Scene):
 
     def construct(self):
 
-        # self.introText()
+        self.introText()
         self.circleArea()
-        # self.rectTrArea()
-        # self.intro()
 
+        tgr = self.rectTrArea()
+        self.intro()
+        self.play(FadeOut(tgr))
+        self.play(self.circle.animate.move_to(ORIGIN))
+
+        # self.circle = Circle(1, WHITE)
+        # self.add(self.circle)
+        # w = MathTex(r"{\pi}r")
+        # h = MathTex(r"r")
+        # self.play(Create(w), Create(h))
+
+        # self.areaTextSlice3(2 * RIGHT , .8, w, h, True)
+        
         # txt = self.introText()
         # self.play(FadeOut(txt))
         # self.rectangleArea()
@@ -532,16 +606,39 @@ class CircleArea(Scene):
         startPoint = RIGHT + .5 * DOWN
         # self.intro()
         # self.slicesAnimation(6,moveCircleTo, startPoint, True)
-        # self.sliceAnimationComplete()
-        # self.ringAnimationAll()
+        self.sliceAnimationComplete()
+        self.ringAnimationAll()
+
+        # p = Polygon(ORIGIN, LEFT, ORIGIN + UP, LEFT + UP)
+        # self.play(Create(p))
+
+        # points = p.get_vertices()
+
+        # self.play(p.animate.become(Line(points[0], points[3])))
+
+        # line = 
         
-        # self.circleToRect()
-        # self.circleToTriangle()
-        # self.endText()
+        
+        c = self.circleToRect()
+        c.set_z_index(40)
+        t = self.circleToTriangle()
+        self.play(*[FadeOut(i) for i in self.mobjects])
+        self.endText()
+
+        # c = Circle(1)
+        # t = ORIGIN
+        # t[0] += 2 * PI
+        # line = Line(ORIGIN, RIGHT).move_to(c, DOWN)
+        # self.play(Create(c))
+        # self.play(c.animate.become(line))
+        # c2 = Circle(1).move_to(ORIGIN + 2 * RIGHT)
+        # self.add(c2)
+        # self.play(c.animate.align_to(c2, alignment_vect=ORIGIN))
+
 
         
 
-    def ringAnimation(self, count):
+    def ringAnimation(self, count, prevCutGr):
 
         strokeColor = BLACK
         strokeWidth = 0
@@ -618,6 +715,8 @@ class CircleArea(Scene):
 
         center = ORIGIN
 
+        if prevCutGr:
+            self.remove(prevCutGr)
         self.add(cutGr)
         self.play(prRings.animate.move_to(center))
 
@@ -785,7 +884,6 @@ class CircleArea(Scene):
 
 
 
-
         self.play(x.animate.set_value(2 * PI), run_time = 2)
 
         newRects = []
@@ -867,7 +965,7 @@ class CircleArea(Scene):
         # self.circle = Circle(1, color = WHITE)
         # self.play(Create(self.circle))
 
-        center = ORIGIN
+        center = self.circle.get_center()
         x = ValueTracker(0)
         mid = 20
         end = 500
@@ -877,7 +975,7 @@ class CircleArea(Scene):
             oldInnerRadius = radius
             oldOuterRadius = oldInnerRadius + gap
 
-            ring = createRing(ORIGIN, oldInnerRadius, gap, color)
+            ring = createRing(center, oldInnerRadius, gap, color)
             ring.set_z_index(zIndex)
 
             leftCoveringArc = createConveringArc(0, 'LEFT',oldOuterRadius,center )
@@ -976,8 +1074,9 @@ class CircleArea(Scene):
         self.remove(self.circle)
         # self.play(x.animate.set_value(mid), run_time = 2)
         self.play(x.animate.set_value(end), run_time = 2, rate_func = rate_functions.ease_in_cubic)
-        
-        self.wait(1)
-        self.play(FadeOut(ringGr))
+
+        # self.play(FadeOut(ringGr))
+        # self.wait(1)
+        return ringGr
 
         
