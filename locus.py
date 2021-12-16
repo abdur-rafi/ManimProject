@@ -112,10 +112,10 @@ class Locus(Scene):
         eqnText = r"""
             &{\Rightarrow}{\sqrt{(x - 2)^2 + (y - 1)^2}} = {\sqrt{(x - 7)^2 + (y - 1)^2}} 
             \\&{\Rightarrow} (x - 2)^2 = (x - 7)^2
-            \\&{\Rightarrow} x^2 - 4x + 4 = x^2 - 7x + 49
-            \\&{\Rightarrow} x^2 - 4x + 4 - x^2 + 7x - 49 = 0
-            \\&{\Rightarrow} 3x - 45 = 0
-            \\&{\Rightarrow} x - 15 = 0
+            \\&{\Rightarrow} x^2 - 4x + 4 = x^2 - 14x + 49
+            \\&{\Rightarrow} x^2 - 4x + 4 - x^2 + 14x - 49 = 0
+            \\&{\Rightarrow} 10x - 45 = 0
+            \\&{\Rightarrow} x - 4.5 = 0
              
         """
 
@@ -170,7 +170,7 @@ class Locus(Scene):
         b = a * sqrt(1 - e ** 2)
         ellips = Ellipse(width= 2 * a, height= 2 * b).move_to(midPoint).set_color(self.dotColor)
 
-        obj = DashedVMobject(ellips, self.dashC).set_stroke(BLACK, width = 5).set_z_index(6)
+        obj = DashedVMobject(ellips, 2 * self.dashC).set_stroke(BLACK, width = 5).set_z_index(6)
 
         self.add(obj)
 
@@ -356,7 +356,7 @@ class Locus(Scene):
         self.play(l2c.animate.become(PA))
 
         eqnText = r"""
-                    &{\Rightarrow}{\sqrt{(x - 2)^2 + (y - 0)^2}} = {\sqrt{(x + 1)^2 + (y - y)^2}} 
+                    &{\Rightarrow}{\sqrt{(x - 1)^2 + (y - 0)^2}} = {\sqrt{(x + 1)^2 + (y - y)^2}} 
         """
         
         eqn = MathTex(eqnText).scale(.6).next_to(PS, DOWN).align_to(PS, LEFT)
@@ -400,9 +400,11 @@ class Locus(Scene):
 
     def roseCurve(self):
         self.curve = ParametricFunction(Locus.roseCurveFunction, t_range=[0, PI]).set_color(self.dotColor)
-        self.circle = Circle(self.dot.get_center()[0]).set_color(self.dotColor)
-        dotCopy = self.dot.copy()
+        self.circle = Circle(self.dot.get_center()[0]).set_color(YELLOW)
+        dotCopy = self.dot.copy().set_color(YELLOW)
         dotLabelCopy = self.dotLabel.copy()
+        self.dot.set_z_index(5)
+
         dotCopy.add_updater(lambda _ : dotCopy.move_to(self.circle.get_end()))
         dotLabelCopy.add_updater(lambda _ : dotLabelCopy.next_to(dotCopy, UP))
         self.add(dotCopy, dotLabelCopy)
