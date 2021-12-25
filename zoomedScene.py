@@ -26,7 +26,7 @@ class MovingZoomedSceneAround(ZoomedScene):
         frame.move_to(dot)
         frame.set_color(PURPLE)
         zoomed_display_frame.set_color(RED)
-        zoomed_display.shift(DOWN)
+        # zoomed_display.shift(2 * DOWN)
 
 
         # unfold_camera = UpdateFromFunc(zd_rect, lambda rect: rect.replace(zoomed_display))
